@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://astashov.github.com/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx">
+  <link rel="canonical" href="http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Anton Astashov's blog" type="application/atom+xml">
@@ -67,7 +67,7 @@
   
 <form action="https://www.google.com/search" method="get">
   <fieldset role="search">
-    <input type="hidden" name="q" value="site:astashov.github.com" />
+    <input type="hidden" name="q" value="site:astashov.github.io" />
     <input class="search" type="text" name="q" results="0" placeholder="Search"/>
   </fieldset>
 </form>
@@ -106,7 +106,7 @@
 <time datetime="2014-07-30T17:28:27-07:00" pubdate data-updated="true">Jul 30<sup>th</sup>, 2014</time>
         
            | <a href="#disqus_thread"
-             data-disqus-identifier="http://astashov.github.com">Comments</a>
+             data-disqus-identifier="http://astashov.github.io">Comments</a>
         
       </p>
     
@@ -128,7 +128,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>It will create a skeleton of a Clojure project. Then, open project.clj file, it should looks something like that:</p>
+<p>It will create a skeleton of a Clojure project. Then, open project.clj file, it should look something like that:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -145,7 +145,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Add some lines to turn the project into ClojureScript project:</p>
+<p>Add some lines to turn the project into a ClojureScript project:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -173,6 +173,7 @@
 <span class='line-number'>24</span>
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
+<span class='line-number'>27</span>
 </pre></td><td class='code'><pre><code class='clj'><span class='line'><span class="p">(</span><span class="kd">defproject </span><span class="nv">perfection</span> <span class="s">&quot;0.1.0-SNAPSHOT&quot;</span>
 </span><span class='line'>  <span class="ss">:description</span> <span class="s">&quot;FIXME: write description&quot;</span>
 </span><span class='line'>  <span class="ss">:url</span> <span class="s">&quot;http://example.com/FIXME&quot;</span>
@@ -181,16 +182,17 @@
 </span><span class='line'>  <span class="ss">:dependencies</span> <span class="p">[[</span><span class="nv">org.clojure/clojure</span> <span class="s">&quot;1.5.1&quot;</span><span class="p">]</span>
 </span><span class='line'>                 <span class="p">[</span><span class="nv">org.clojure/clojurescript</span> <span class="s">&quot;0.0-2277&quot;</span><span class="p">]])</span> <span class="c1">;; &lt;- Adding ClojureScript</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="ss">:jvm-opts</span> <span class="p">[</span><span class="s">&quot;-Xmx1G&quot;</span><span class="p">]</span> <span class="c1">;; &lt;- Sometimes ClojureScript compiling fails because allowed JVM heap space</span>
-</span><span class='line'>                       <span class="c1">;; it too low. This line gives it more space</span>
+</span><span class='line'>  <span class="ss">:jvm-opts</span> <span class="p">[</span><span class="s">&quot;-Xmx1G&quot;</span><span class="p">]</span> <span class="c1">;; &lt;- Sometimes ClojureScript compilation fails because available</span>
+</span><span class='line'>                       <span class="c1">;; JVM heap space it too low. This line gives it more space</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="ss">:plugins</span> <span class="p">[[</span><span class="nv">lein-cljsbuild</span> <span class="s">&quot;1.0.3&quot;</span><span class="p">]]</span> <span class="c1">;; &lt;- While you can build ClojureScript just by running</span>
 </span><span class='line'>                                      <span class="c1">;;    &#39;cljsc&#39;, there is a waaay more convenient way -</span>
 </span><span class='line'>                                      <span class="c1">;;    using cljsbuild lein plugin</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="c1">;; This is the list of builds &#39;cljsbuild&#39; will use to compile our ClojureScript code into</span>
-</span><span class='line'>  <span class="c1">;; JavaScript. Adding first build &quot;dev&quot;, it will put resulting main entry for JavaScript code</span>
-</span><span class='line'>  <span class="c1">;; to resources/public/perfection.js, and all dependencies for it to resources/public/out.</span>
+</span><span class='line'>  <span class="c1">;; This is the list of builds &#39;cljsbuild&#39; will use to compile our ClojureScript</span>
+</span><span class='line'>  <span class="c1">;; code into JavaScript. Here we add first build &quot;dev&quot;, it will put resulting main</span>
+</span><span class='line'>  <span class="c1">;; entry for JavaScript code to resources/public/perfection.js, and all dependencies</span>
+</span><span class='line'>  <span class="c1">;; for it to resources/public/out</span>
 </span><span class='line'>  <span class="ss">:cljsbuild</span> <span class="p">{</span>
 </span><span class='line'>    <span class="ss">:builds</span> <span class="p">[{</span><span class="ss">:id</span> <span class="s">&quot;dev&quot;</span>
 </span><span class='line'>              <span class="ss">:source-paths</span> <span class="p">[</span><span class="s">&quot;src/perfection&quot;</span><span class="p">]</span>
@@ -211,7 +213,7 @@
 
 <p>And <code>lein</code> will install all the new dependencies we just added.</p>
 
-<p>Now, delete the file <code>src/perfection/core.clj</code>, create a new file <code>src/perfection/core.cljs</code>, and put simple &ldquo;Hello World&rdquo; program into it:</p>
+<p>Next, delete the file <code>src/perfection/core.clj</code>, create a new file <code>src/perfection/core.cljs</code>, and put simple &ldquo;Hello World&rdquo; code into it:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -222,7 +224,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now we need something to run our compiled JavaScript code. Let&rsquo;s create index.html file, which will include the generated JavaScript file. Create <code>resources/public/index.html</code> file and something like this into it:</p>
+<p>Now we need something to run our compiled JavaScript code. Let&rsquo;s create the index.html file, which will include the generated JavaScript file. Create <code>resources/public/index.html</code> file and add something like this to it:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -249,7 +251,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Let&rsquo;s also add some styles, create a <code>resources/public/css/styles.css</code> with this content:</p>
+<p>Let&rsquo;s also add some styles, create the <code>resources/public/css/styles.css</code> CSS file with this content:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -273,20 +275,20 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now we need some server to serve our files. I prefer to use Python&rsquo;s SimpleHTTPServer:</p>
+<p>Now we need some server to serve our files. I usually prefer to use Python&rsquo;s SimpleHTTPServer:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>python -m SimpleHTTPServer 8000
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now, open a browser and go to <code>http://localhost:8000/resources/public/index.html</code>. Check the console, you should see &ldquo;Hello World!&rdquo; there.</p>
+<p>Next, open a browser and go to <code>http://localhost:8000/resources/public/index.html</code>. Check the console, you should see &ldquo;Hello World!&rdquo; there.</p>
 
 <h2>Figwheel</h2>
 
 <p>Now, you have some running ClojureScript environment, which will automatically and instantly (less than for a second) recompile your files when you change any files in &lsquo;src/perfection&rsquo; directory. Sweet. But we want more.</p>
 
-<p>Meet lein-figwheel, amazing lein plugin, which will reload the changed JS files after recompilation in a browser <strong>without</strong> reloading a page! That is so cool. Let&rsquo;s add it to our project:</p>
+<p>Meet <a href="https://github.com/bhauman/lein-figwheel">lein-figwheel</a>, amazing lein plugin, which will reload the changed JavaScript files after recompilation in the browser <strong>without</strong> reloading the page! That is so cool. Let&rsquo;s add it to our project:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -335,8 +337,8 @@
 </span><span class='line'>            <span class="p">[</span><span class="nv">lein-figwheel</span> <span class="s">&quot;0.1.3-SNAPSHOT&quot;</span><span class="p">]]</span> <span class="c1">;; &lt;- Adding also a lein plugin for it</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="c1">;; Figwheel settings. We are going to use &#39;resource/public&#39; directory as our root</span>
-</span><span class='line'>  <span class="c1">;; directory for serving the files from the figwheel server, and also we specify</span>
-</span><span class='line'>  <span class="c1">;; where our CSS styles live, so Figwheel could reload them without reloading a</span>
+</span><span class='line'>  <span class="c1">;; directory for serving the files by the figwheel server, and also we specify</span>
+</span><span class='line'>  <span class="c1">;; where our CSS styles live, so Figwheel could reload them without reloading the</span>
 </span><span class='line'>  <span class="c1">;; page when we change them as well!</span>
 </span><span class='line'>  <span class="ss">:figwheel</span> <span class="p">{</span>
 </span><span class='line'>    <span class="ss">:http-server-root</span> <span class="s">&quot;public&quot;</span>
@@ -355,9 +357,9 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>We will place client code for figwheel not in <code>src/perfection</code>, but in a separate dir, because we don&rsquo;t want other builds (like &lsquo;test&rsquo; or &lsquo;release&rsquo;) to include it.</p>
+<p>We will place the client code for figwheel not in <code>src/perfection</code>, but in a separate dir, because we don&rsquo;t want other builds (like &lsquo;test&rsquo; or &lsquo;release&rsquo;) to include it.</p>
 
-<p>Now, create the figwheel file <code>src/figwheel/perfecton_figwheel.cljs</code>, and put this code into it:</p>
+<p>Now, create the file <code>src/figwheel/perfecton_figwheel.cljs</code>, and put this code there:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -401,14 +403,14 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now close let&rsquo;s shut down our python server, but run</p>
+<p>After that, let&rsquo;s shut down our python server, but run</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>lein figwheel dev
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>instead, and then open localhost:3449/index.html in the browser, and check the console. It should look like:</p>
+<p>instead, then open localhost:3449/index.html in the browser, and check the console. It should look like:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -419,7 +421,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now go to src/perfection/core.cljs, and change it to something else, e.g. change &ldquo;Hello World!&rdquo; to &ldquo;Hello World 2!&rdquo;. You should see in the console, that we reloaded our files, and new &ldquo;Hello World 2!&rdquo; output:</p>
+<p>Now go to src/perfection/core.cljs, and change it to something else, e.g. change &ldquo;Hello World!&rdquo; to &ldquo;Hello World 2!&rdquo;. You should see in the console, that we reloaded our files, and the new &ldquo;Hello World 2!&rdquo; output:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -432,7 +434,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Figwheel will also track the changes in CSS and also reload them live. Change the background in the CSS file from silver to blue (<code>resources/public/css/style.css</code> file):</p>
+<p>Figwheel will also track the changes in CSS and also reload them. Change the background in the CSS file from silver to blue (<code>resources/public/css/style.css</code> file):</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -454,9 +456,9 @@
 
 <h2>Tests</h2>
 
-<p>I like unit tests. They give me confidence. But it really sucks to manually run them every time, and it especially sucks to run them in Clojure/ClojureScript, because you have to wait for full JVM start, which takes several seconds. Not really perfect instant experience we are looking for. Thankfully, you can actually run it once, and then restart the tests on every change of the source or test files, via the same &lsquo;lein clsbuild auto&rsquo; mechanism.</p>
+<p>I like unit tests. They give me confidence. But it really sucks to manually run them every time, and it especially sucks to run them in Clojure/ClojureScript, because you have to wait for the full JVM start, which takes several seconds. Not really perfect instant experience we are looking for. Thankfully, you can run it once, and then restart the tests on every change of the source or test files, via the same &lsquo;lein clsbuild auto&rsquo; mechanism.</p>
 
-<p>First thing, make sure you have <strong>PhantomJS</strong> installed. If not, then install it via HomeBrew:</p>
+<p>First thing, make sure you have <strong>PhantomJS</strong> installed. If not, install it with HomeBrew:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>brew install phantomjs
@@ -529,8 +531,8 @@
 </span><span class='line'>                <span class="ss">:output-dir</span> <span class="s">&quot;resources/public/out&quot;</span>
 </span><span class='line'>                <span class="ss">:optimizations</span> <span class="ss">:none</span>
 </span><span class='line'>                <span class="ss">:source-map</span> <span class="nv">true</span><span class="p">}}</span>
-</span><span class='line'>             <span class="c1">;; Adding a new build &#39;test&#39;. Note the :notify-command setting,</span>
-</span><span class='line'>             <span class="c1">;; it will run the tests on the files change</span>
+</span><span class='line'>             <span class="c1">;; Adding the new build &#39;test&#39;. Note the :notify-command setting,</span>
+</span><span class='line'>             <span class="c1">;; it will run the tests when the files change</span>
 </span><span class='line'>             <span class="p">{</span><span class="ss">:id</span> <span class="s">&quot;test&quot;</span>
 </span><span class='line'>              <span class="ss">:source-paths</span> <span class="p">[</span><span class="s">&quot;src/perfection&quot;</span> <span class="s">&quot;test&quot;</span><span class="p">]</span>
 </span><span class='line'>              <span class="ss">:notify-command</span> <span class="p">[</span><span class="s">&quot;phantomjs&quot;</span> <span class="ss">:cljs.test/runner</span> <span class="s">&quot;perfection_test.js&quot;</span><span class="p">]</span>
@@ -540,7 +542,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now, let&rsquo;s add some function to test to our code (<code>src/perfection/core.cljs</code>):</p>
+<p>Now, let&rsquo;s add some function to test (<code>src/perfection/core.cljs</code>):</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -648,7 +650,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Woot! Now we have autorunning test in our app.</p>
+<p>W00t! Now we have an autorunning test in our app.</p>
 
 <p>Some notes: PhantomJS is pretty old, it lacks a lot of features existing in modern browsers, like <code>Function.bind</code> or <code>requestAnimationFrame</code>. So, for tests you may need shims, you can write them in separate JS files, and then add to <code>:notify-command</code> in <code>project.clj</code> for the &ldquo;test&rdquo; build, e.g. like that:</p>
 
@@ -660,16 +662,16 @@
 </pre></td><td class='code'><pre><code class='clj'><span class='line'><span class="ss">:notify-command</span> <span class="p">[</span><span class="s">&quot;phantomjs&quot;</span>
 </span><span class='line'>                 <span class="ss">:cljs.test/runner</span>
 </span><span class='line'>                 <span class="s">&quot;resources/public/js/function-bind-shim.js&quot;</span>
-</span><span class='line'>                 <span class="s">&quot;resources/public/js/request-animation-frame.js&quot;</span>
+</span><span class='line'>                 <span class="s">&quot;resources/public/js/request-animation-frame-shim.js&quot;</span>
 </span><span class='line'>                 <span class="s">&quot;perfection_test.js&quot;</span><span class="p">]</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
 <h2>Integration with Vim</h2>
 
-<p>We already have a lot, but we are not going to stop :) We would also want to quickly search docs for the functions we use from Vim, be able to jump to definitions of the functions, and even execute some code right in the browser&rsquo;s context, right in the context of our running application, straight from Vim. Oh, that would be super cool. And that is totally possible, all thanks to famous Vim master Tim Pope and his beautiful &lsquo;vim-fireplace&rsquo; plugin.</p>
+<p>We already have a lot, but we are not going to stop :). We would also want to quickly search docs for the functions we use from Vim, be able to jump to definitions of the functions, and even execute some code right in the browser&rsquo;s context, right in the context of our running application, straight from Vim. Oh yes, that would be super cool. And that is totally possible, all thanks to famous Vim master Tim Pope and his beautiful &lsquo;vim-fireplace&rsquo; plugin.</p>
 
-<p>So, let&rsquo;s first configure our app so it could accept connections from repl. We need to install brepl to it. As usual, we first need some changes to our <code>project.clj</code>:</p>
+<p>So, let&rsquo;s first configure our app so it could accept connections from repl. We need to install brepl to it. As usual, we first need to add some changes to <code>project.clj</code>:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -767,7 +769,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>And add requiring of it to <code>resources/public/index.html</code>:</p>
+<p>And add its requiring to <code>resources/public/index.html</code>:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -800,11 +802,11 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now, restart <code>lein figwheel dev</code>, then run <code>lein repl</code>.</p>
+<p>After that, restart <code>lein figwheel dev</code>, then run <code>lein repl</code>.</p>
 
-<p>Now, time to install the vim-fireplace plugin for Vim. I use <code>pathogen</code>, so I just simply put it to <code>~/.vim/bundle/vim-fireplace</code>.</p>
+<p>Now, it&rsquo;s time to install the vim-fireplace plugin for Vim. I use <code>pathogen</code>, so I just simply put the plugin to <code>~/.vim/bundle/vim-fireplace</code>.</p>
 
-<p>After that, restart Vim, open <code>src/perfection/core.cljs</code>, and in Vim run <code>:Piggieback 9000</code>. It will hang for several seconds.</p>
+<p>Next, restart Vim, open <code>src/perfection/core.cljs</code>, and in Vim run <code>:Piggieback 9000</code>. It will hang for several seconds.</p>
 
 <p>Then reload <code>localhost:3449/index.html</code> in browser.</p>
 
@@ -821,13 +823,13 @@
 
 <p>but that&rsquo;s totally fine, and will work anyway.</p>
 
-<p>Now, go back to <code>src/perfection/core.cljs</code> in Vim try to run something like <code>:Eval (js/alert 123)</code>. The alert window should appear right in the browser. Cool, huh?</p>
+<p>Go back to <code>src/perfection/core.cljs</code> in Vim, and try to run something like <code>:Eval (js/alert 123)</code>. The alert window should appear right in the browser. Cool, huh?</p>
 
-<p>You can do a lot of things with vim-fireplace, just check the docs. It converts Vim to a pretty serious ClojureScript IDE, which now is pretty close even to LightTable, but with all that well-known Vim stuff you and me love so much :)</p>
+<p>You can do a lot of things with vim-fireplace, just check the docs. It converts Vim to a pretty solid ClojureScript IDE, which now is quite close even to LightTable, but with all that well-known Vim stuff you and me love so much :)</p>
 
 <h2>Release</h2>
 
-<p>Now we have everything we need for comfortable development process, but I highly recommend that you also add another build, which will generate &ldquo;release&rdquo; version of the app, which will eventually go to production. It is very important to do that right from the beginning, because sometimes there are issues with &ldquo;advanced&rdquo; optimizations of Google Closure (which ClojureScript uses under the hood for compilation). You should really always check if your app works with :advanced optimizations, because debugging may be hard there.</p>
+<p>Now we have everything we need for comfortable development process, but I highly recommend that you also add another build, which will generate the &ldquo;release&rdquo; version of the app, which will eventually go to production. It is very important to do that right from the beginning, because sometimes there are issues with &ldquo;advanced&rdquo; optimizations of Google Closure (which ClojureScript uses under the hood for compilation). You should really always check that your app works with :advanced optimizations, because debugging may be difficult there.</p>
 
 <p>So, add this to your <code>project.clj</code>:</p>
 
@@ -988,23 +990,23 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>And whenever I make a change in the source code, I&rsquo;ll get updated version of the app in the browser, without page refresh, the tests will run, and the release will be build. All automagically.</p>
+<p>And whenever I make a change in the source code, I&rsquo;ll get updated version of the app in the browser, without page refresh, the tests will run, and the release will be built. All automagically.</p>
 
-<p>That&rsquo;s what I call perfect dev environment.</p>
+<p>That&rsquo;s what I call &ldquo;the perfect dev environment&rdquo;.</p>
 
 <h2>Tips &amp; Tricks</h2>
 
 <h3>Paredit</h3>
 
-<p>You should use it. Since Clojure is Lisp, and consists from s-expressions, it has very clear structure.  Paredit allows to efficiently edit your code by manipulating with s-expressions. This is when all these parentheses, which initially scare Lisp newcomers, will benefit themselves. There is a plugin for Vim, a bit buggy, especially when you copy/paste large structures (especially when they are unbalanced), but it&rsquo;s still worth it.</p>
+<p>You should use it. Since Clojure is Lisp, and consists of s-expressions, it has a very clear structure. Paredit allows to efficiently edit your code by manipulating s-expressions. This is when all these parentheses, which initially scare Lisp newcomers, will bring power. There is a plugin for Vim, a bit buggy, especially when you copy/paste large structures (especially when they are unbalanced), but it&rsquo;s still worth it.</p>
 
 <h3><code>p</code> and <code>b</code></h3>
 
-<p>I found it very useful for my development process to create the function <code>p</code> and the macro <code>b</code> for debugging output.</p>
+<p>I found it very useful for my development process to create the function <code>p</code> and the macro <code>b</code> for debugging.</p>
 
 <ul>
-<li><code>p</code> just prints what the value it receives and then returns it.</li>
-<li><code>b</code> prints what time did the execution of the nested s-expression took, and also returns the value.</li>
+<li><code>p</code> just prints what the value it receives and returns it.</li>
+<li><code>b</code> prints what time did the execution of the nested s-expression take, and also returns the value.</li>
 </ul>
 
 
@@ -1058,7 +1060,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>And then we can use them, like this way. Imagine you have a function:</p>
+<p>And then we can use them, like that. Imagine you have a function:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -1080,7 +1082,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>And get &lsquo;5&rsquo; in the browser console. Curious how long it takes to execute it?</p>
+<p>And it will put &lsquo;5&rsquo; in the browser console. Curious how long it takes to execute it?</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -1091,20 +1093,20 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>And get &lsquo;0ms&rsquo; (obviously :)) in the browser console.</p>
+<p>&lsquo;0ms&rsquo; (obviously :)) will appear in the browser console.</p>
 
 <p>It starts to really shine especially with Paredit, when you can wrap and unwrap parentheses by one keystroke.</p>
 
 <h3>Video</h3>
 
-<p>This is a little screencast how I develop <a href="http://textik.com">Textik</a>, using the dev environment like that:</p>
+<p>This is a little screencast I recorded how I develop <a href="http://textik.com">Textik</a>, using the dev environment like that:</p>
 
 <iframe width="835" height="626" src="//www.youtube.com/embed/IWexDxLnnak" frameborder="0" allowfullscreen></iframe>
 
 
 <h2>Conclusion</h2>
 
-<p>I really think ClojureScript so far is the most interesting and productive way to build front-end projects on the web. Especially if you use it with React (or some React wrapper, like Om, Reagent or Quiescent). If you didn&rsquo;t try it yet, you should definitely try, and then hopefully you&rsquo;ll find this article useful :)</p>
+<p>I really think ClojureScript so far is the most interesting and productive way to build complex front-end projects on the web. Especially if you use it with React (and some React wrapper, like <a href="https://github.com/swannodette/om">Om</a>, <a href="https://github.com/holmsand/reagent">Reagent</a> or <a href="https://github.com/levand/quiescent">Quiescent</a>). If you didn&rsquo;t try it yet, you should definitely try, and then hopefully you&rsquo;ll find this article useful :)</p>
 </div>
 
 
@@ -1135,7 +1137,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://astashov.github.com/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/" data-via="" data-counturl="http://astashov.github.com/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/" data-via="" data-counturl="http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/" >Tweet</a>
   
   
   
@@ -1180,8 +1182,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://astashov.github.com/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/';
-        var disqus_url = 'http://astashov.github.com/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/';
+        var disqus_identifier = 'http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/';
+        var disqus_url = 'http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/';
         var disqus_script = 'embed.js';
       
     (function () {

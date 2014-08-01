@@ -3,22 +3,22 @@
   
   
   <url>
-    <loc>http://astashov.github.com/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/</loc>
+    <loc>http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/</loc>
     <lastmod>2014-07-30T17:28:27-07:00</lastmod>
     <priority>0.8</priority>
   </url>
   
   
   <url>
-    <loc>http://astashov.github.com/blog/archives/</loc>
-    <lastmod>2014-07-31T22:03:02-07:00</lastmod>
+    <loc>http://astashov.github.io/blog/archives/</loc>
+    <lastmod>2014-07-31T22:44:30-07:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>http://astashov.github.com/</loc>
-    <lastmod>2014-07-31T22:03:02-07:00</lastmod>
+    <loc>http://astashov.github.io/</loc>
+    <lastmod>2014-07-31T22:44:30-07:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
