@@ -4,7 +4,7 @@
   <title><![CDATA[Anton Astashov's blog]]></title>
   <link href="http://astashov.github.io/atom.xml" rel="self"/>
   <link href="http://astashov.github.io/"/>
-  <updated>2014-07-31T22:49:03-07:00</updated>
+  <updated>2014-08-01T10:04:28-07:00</updated>
   <id>http://astashov.github.io/</id>
   <author>
     <name><![CDATA[Anton Astashov]]></name>
@@ -14,17 +14,17 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Perfect ClojureScript Development Environment With Vim on MacOSX]]></title>
-    <link href="http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx/"/>
+    <title type="html"><![CDATA[Perfect ClojureScript Development Environment With Vim]]></title>
+    <link href="http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim/"/>
     <updated>2014-07-30T17:28:27-07:00</updated>
-    <id>http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim-on-macosx</id>
+    <id>http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim</id>
     <content type="html"><![CDATA[<p>When I just started to learn ClojureScript, I had hard time trying to find some tutorials which could explain how to set up a nice dev environment for ClojureScript. The good environment is extremely important especially when you just started to play around with the language, it is very useful to get immediate feedback to your changes in the code. But it&rsquo;s also helpful when you already know what you do, and allows you to iterate quickly on your project.</p>
 
 <p>Later, while working on <a href="http://textik.com">Textik</a> (check it out, or check the <a href="http://github.com/astashov/tixi">sources</a>), I was able to build something close enough to the ideal environment, which could allow me to iterate very quickly. To simplify life of ClojureScript beginners, here&rsquo;s a tutorial how to set up that kind of environment.</p>
 
 <p>So, here is a detailed explanation what you need to do from the scratch, or you could just go and clone/fork <a href="http://github.com/astashov/perfection">the skeleton project</a> on Github, if you feel more like tl;dr.</p>
 
-<p>I used Vim on MacOSX for development, but most of this tutorial (except the Vim part) is IDE-agnostic.</p>
+<p>I used Vim for development, but most of this tutorial (except the Vim part) is IDE-agnostic.</p>
 
 <p>To start, let&rsquo;s create a new Clojure project, called &lsquo;perfection&rsquo;:</p>
 
