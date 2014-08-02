@@ -4,7 +4,7 @@
   <title><![CDATA[Anton Astashov's blog]]></title>
   <link href="http://astashov.github.io/atom.xml" rel="self"/>
   <link href="http://astashov.github.io/"/>
-  <updated>2014-08-01T21:57:03-07:00</updated>
+  <updated>2014-08-02T15:30:15-07:00</updated>
   <id>http://astashov.github.io/</id>
   <author>
     <name><![CDATA[Anton Astashov]]></name>
@@ -85,7 +85,7 @@
 </span><span class='line'>  <span class="ss">:license</span> <span class="p">{</span><span class="ss">:name</span> <span class="s">&quot;Eclipse Public License&quot;</span>
 </span><span class='line'>            <span class="ss">:url</span> <span class="s">&quot;http://www.eclipse.org/legal/epl-v10.html&quot;</span><span class="p">}</span>
 </span><span class='line'>  <span class="ss">:dependencies</span> <span class="p">[[</span><span class="nv">org.clojure/clojure</span> <span class="s">&quot;1.5.1&quot;</span><span class="p">]</span>
-</span><span class='line'>                 <span class="p">[</span><span class="nv">org.clojure/clojurescript</span> <span class="s">&quot;0.0-2277&quot;</span><span class="p">]])</span> <span class="c1">;; &lt;- Adding ClojureScript</span>
+</span><span class='line'>                 <span class="p">[</span><span class="nv">org.clojure/clojurescript</span> <span class="s">&quot;0.0-2277&quot;</span><span class="p">]]</span> <span class="c1">;; &lt;- Adding ClojureScript</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="ss">:jvm-opts</span> <span class="p">[</span><span class="s">&quot;-Xmx1G&quot;</span><span class="p">]</span> <span class="c1">;; &lt;- Sometimes ClojureScript compilation fails because available</span>
 </span><span class='line'>                       <span class="c1">;; JVM heap space it too low. This line gives it more space</span>
