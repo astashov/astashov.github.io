@@ -1,0 +1,759 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Clojurescript | Anton Astashov's blog]]></title>
+  <link href="http://astashov.github.io/blog/categories/clojurescript/atom.xml" rel="self"/>
+  <link href="http://astashov.github.io/"/>
+  <updated>2015-11-11T11:44:27-06:00</updated>
+  <id>http://astashov.github.io/</id>
+  <author>
+    <name><![CDATA[Anton Astashov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Perfect ClojureScript Development Environment With Vim]]></title>
+    <link href="http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim/"/>
+    <updated>2014-07-30T19:28:27-05:00</updated>
+    <id>http://astashov.github.io/blog/2014/07/30/perfect-clojurescript-development-environment-with-vim</id>
+    <content type="html"><![CDATA[<p>When I just started to learn ClojureScript, I had hard time trying to find some tutorials which could explain how to set up a nice dev environment for ClojureScript. The good environment is extremely important especially when you just started to play around with the language, it is very useful to get immediate feedback to your changes in the code. But it&rsquo;s also helpful when you already know what you do, and allows you to iterate quickly on your project.</p>
+
+<p>Later, while working on <a href="http://textik.com">Textik</a> (check it out, or check the <a href="http://github.com/astashov/tixi">sources</a>), I was able to build something close enough to the ideal environment, which could allow me to iterate very quickly. To simplify life of ClojureScript beginners, here&rsquo;s a tutorial how to set up that kind of environment.</p>
+
+<p>So, here is a detailed explanation what you need to do from the scratch, or you could just go and clone/fork <a href="http://github.com/astashov/perfection">the skeleton project</a> on Github, if you feel more like tl;dr.</p>
+
+<p>I used Vim for development, but most of this tutorial (except the Vim part) is IDE-agnostic.</p>
+
+<p>To start, let&rsquo;s create a new Clojure project, called &lsquo;perfection&rsquo;:</p>
+
+<p><code>bash
+$ lein new perfection
+</code></p>
+
+<p>It will create a skeleton of a Clojure project. Then, open project.clj file, it should look something like that:</p>
+
+<p>```clj
+(defproject perfection &ldquo;0.1.0-SNAPSHOT&rdquo;
+  :description &ldquo;FIXME: write description&rdquo;
+  :url &ldquo;<a href="http://example.com/FIXME">http://example.com/FIXME</a>&rdquo;
+  :license {:name &ldquo;Eclipse Public License&rdquo;</p>
+
+<pre><code>        :url "http://www.eclipse.org/legal/epl-v10.html"}
+</code></pre>
+
+<p>  :dependencies [[org.clojure/clojure &ldquo;1.5.1&rdquo;]])
+```</p>
+
+<p>Add some lines to turn the project into a ClojureScript project:</p>
+
+<p>```clj
+(defproject perfection &ldquo;0.1.0-SNAPSHOT&rdquo;
+  :description &ldquo;FIXME: write description&rdquo;
+  :url &ldquo;<a href="http://example.com/FIXME">http://example.com/FIXME</a>&rdquo;
+  :license {:name &ldquo;Eclipse Public License&rdquo;</p>
+
+<pre><code>        :url "http://www.eclipse.org/legal/epl-v10.html"}
+</code></pre>
+
+<p>  :dependencies [[org.clojure/clojure &ldquo;1.5.1&rdquo;]</p>
+
+<pre><code>             [org.clojure/clojurescript "0.0-2277"]] ;; &lt;- Adding ClojureScript
+</code></pre>
+
+<p>  :jvm-opts [&ldquo;-Xmx1G&rdquo;] ;; &lt;&ndash; Sometimes ClojureScript compilation fails because available</p>
+
+<pre><code>                   ;; JVM heap space it too low. This line gives it more space
+</code></pre>
+
+<p>  :plugins [[lein-cljsbuild &ldquo;1.0.3&rdquo;]] ;; &lt;&ndash; While you can build ClojureScript just by running</p>
+
+<pre><code>                                  ;;    'cljsc', there is a waaay more convenient way -
+                                  ;;    using cljsbuild lein plugin
+</code></pre>
+
+<p>  ;; This is the list of builds &lsquo;cljsbuild&rsquo; will use to compile our ClojureScript
+  ;; code into JavaScript. Here we add first build &ldquo;dev&rdquo;, it will put resulting main
+  ;; entry for JavaScript code to resources/public/perfection.js, and all dependencies
+  ;; for it to resources/public/out
+  :cljsbuild {</p>
+
+<pre><code>:builds [{:id "dev"
+          :source-paths ["src/perfection"]
+          :compiler {
+            :output-to "resources/public/perfection.js"
+            :output-dir "resources/public/out"
+            :optimizations :none
+            :source-map true}}]})
+</code></pre>
+
+<p>```</p>
+
+<p>Now, run</p>
+
+<p><code>bash
+$ lein deps
+</code></p>
+
+<p>And <code>lein</code> will install all the new dependencies we just added.</p>
+
+<p>Next, delete the file <code>src/perfection/core.clj</code>, create a new file <code>src/perfection/core.cljs</code>, and put simple &ldquo;Hello World&rdquo; code into it:</p>
+
+<p>```clj
+(ns perfection.core)</p>
+
+<p>(.log js/console &ldquo;Hello world!&rdquo;)
+```</p>
+
+<p>Now we need something to run our compiled JavaScript code. Let&rsquo;s create the index.html file, which will include the generated JavaScript file. Create <code>resources/public/index.html</code> file and add something like this to it:</p>
+
+<p>```html
+<html>
+  <head></p>
+
+<pre><code>&lt;title&gt;Perfection - perfect dev environment for ClojureScript&lt;/title&gt;
+&lt;link href="css/style.css" rel="stylesheet" type="text/css" /&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;script src="out/goog/base.js" type="text/javascript"&gt;&lt;/script&gt;
+&lt;script src="perfection.js" type="text/javascript"&gt;&lt;/script&gt;
+&lt;script type="text/javascript"&gt;goog.require("perfection.core");&lt;/script&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<p>Let&rsquo;s also add some styles, create the <code>resources/public/css/styles.css</code> CSS file with this content:</p>
+
+<p><code>css
+body {
+  background: silver;
+}
+</code></p>
+
+<p>Let&rsquo;s try to run compilation, via &lsquo;cljsbuild&rsquo; lein plugin:</p>
+
+<p><code>bash
+$ lein cljsbuild auto dev
+Compiling ClojureScript.
+Compiling "resources/public/perfection.js" from ["src"]...
+Successfully compiled "resources/public/perfection.js" in 6.829 seconds.
+</code></p>
+
+<p>Now we need some server to serve our files. I usually prefer to use Python&rsquo;s SimpleHTTPServer:</p>
+
+<p><code>
+$ python -m SimpleHTTPServer 8000
+</code></p>
+
+<p>Next, open a browser and go to <code>http://localhost:8000/resources/public/index.html</code>. Check the console, you should see &ldquo;Hello World!&rdquo; there.</p>
+
+<h2>Figwheel</h2>
+
+<p>Now, you have some running ClojureScript environment, which will automatically and instantly (less than for a second) recompile your files when you change any files in &lsquo;src/perfection&rsquo; directory. Sweet. But we want more.</p>
+
+<p>Meet <a href="https://github.com/bhauman/lein-figwheel">lein-figwheel</a>, amazing lein plugin, which will reload the changed JavaScript files after recompilation in the browser <strong>without</strong> reloading the page! That is so cool. Let&rsquo;s add it to our project:</p>
+
+<p>```clj
+(defproject perfection &ldquo;0.1.0-SNAPSHOT&rdquo;
+  :description &ldquo;FIXME: write description&rdquo;
+  :url &ldquo;<a href="http://example.com/FIXME">http://example.com/FIXME</a>&rdquo;
+  :license {:name &ldquo;Eclipse Public License&rdquo;</p>
+
+<pre><code>        :url "http://www.eclipse.org/legal/epl-v10.html"}
+</code></pre>
+
+<p>  :dependencies [[org.clojure/clojure &ldquo;1.5.1&rdquo;]</p>
+
+<pre><code>             [org.clojure/clojurescript "0.0-2277"]
+             [figwheel "0.1.3-SNAPSHOT"]]) ;; &lt;- Adding Figwheel
+</code></pre>
+
+<p>  :jvm-opts [&ldquo;-Xmx1G&rdquo;]</p>
+
+<p>  :plugins [[lein-cljsbuild &ldquo;1.0.3&rdquo;]</p>
+
+<pre><code>        [lein-figwheel "0.1.3-SNAPSHOT"]] ;; &lt;- Adding also a lein plugin for it
+</code></pre>
+
+<p>  ;; Figwheel settings. We are going to use &lsquo;resource/public&rsquo; directory as our root
+  ;; directory for serving the files by the figwheel server, and also we specify
+  ;; where our CSS styles live, so Figwheel could reload them without reloading the
+  ;; page when we change them as well!
+  :figwheel {</p>
+
+<pre><code>:http-server-root "public"
+:port 3449
+:css-dirs ["resources/public/css"]}
+</code></pre>
+
+<p>  :cljsbuild {</p>
+
+<pre><code>:builds [{:id "dev"
+          :source-paths ["src/perfection" "src/figwheel"] ;; &lt;- adding source path where
+                                                          ;;    figwheel code will live
+          :compiler {
+            :output-to "resources/public/perfection.js"
+            :output-dir "resources/public/out"
+            :optimizations :none
+            :source-map true}}]})
+</code></pre>
+
+<p>```</p>
+
+<p>We will place the client code for figwheel not in <code>src/perfection</code>, but in a separate dir, because we don&rsquo;t want other builds (like &lsquo;test&rsquo; or &lsquo;release&rsquo;) to include it.</p>
+
+<p>Now, create the file <code>src/figwheel/perfecton_figwheel.cljs</code>, and put this code there:</p>
+
+<p>```clj
+(ns perfection-figwheel
+  (:require [figwheel.client :as fw :include-macros true]))</p>
+
+<p>(fw/watch-and-reload)
+```</p>
+
+<p>And require it from <code>resources/public/index.html</code>:</p>
+
+<p>```html
+<html>
+  <head></p>
+
+<pre><code>&lt;title&gt;Perfection - perfect dev environment for ClojureScript&lt;/title&gt;
+&lt;link href="css/style.css" rel="stylesheet" type="text/css" /&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;script src="out/goog/base.js" type="text/javascript"&gt;&lt;/script&gt;
+&lt;script src="perfection.js" type="text/javascript"&gt;&lt;/script&gt;
+&lt;script type="text/javascript"&gt;goog.require("perfection.core");&lt;/script&gt;
+&lt;!-- Requiring figwheel --&gt;
+&lt;script type="text/javascript"&gt;goog.require("perfection_figwheel");&lt;/script&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<p>After that, let&rsquo;s shut down our python server, but run</p>
+
+<p><code>bash
+$ lein figwheel dev
+</code></p>
+
+<p>instead, then open localhost:3449/index.html in the browser, and check the console. It should look like:</p>
+
+<p><code>
+Hello world!
+Figwheel: trying to open cljs reload socket
+Figwheel: socket connection established
+</code></p>
+
+<p>Now go to src/perfection/core.cljs, and change it to something else, e.g. change &ldquo;Hello World!&rdquo; to &ldquo;Hello World 2!&rdquo;. You should see in the console, that we reloaded our files, and the new &ldquo;Hello World 2!&rdquo; output:</p>
+
+<p><code>
+Figwheel: loading files
+Hello world 2!
+Figwheel: loaded these files
+("/out/perfection/core.js")
+</code></p>
+
+<p>Figwheel will also track the changes in CSS and also reload them. Change the background in the CSS file from silver to blue (<code>resources/public/css/style.css</code> file):</p>
+
+<p><code>css
+body {
+  background: blue;
+}
+</code></p>
+
+<p>and you&rsquo;ll see in the browser console:</p>
+
+<p><code>
+Figwheel: loaded CSS files
+("/css/style.css")
+</code></p>
+
+<h2>Tests</h2>
+
+<p>I like unit tests. They give me confidence. But it really sucks to manually run them every time, and it especially sucks to run them in Clojure/ClojureScript, because you have to wait for the full JVM start, which takes several seconds. Not really perfect instant experience we are looking for. Thankfully, you can run it once, and then restart the tests on every change of the source or test files, via the same &lsquo;lein clsbuild auto&rsquo; mechanism.</p>
+
+<p>First thing, make sure you have <strong>PhantomJS</strong> installed. If not, install it with HomeBrew:</p>
+
+<p><code>bash
+$ brew install phantomjs
+</code></p>
+
+<p>Then, let&rsquo;s add the &lsquo;test&rsquo; build for <code>cljsbuild</code>, in <code>project.clj</code>:</p>
+
+<p>```clj
+(defproject perfection &ldquo;0.1.0-SNAPSHOT&rdquo;
+  :description &ldquo;FIXME: write description&rdquo;
+  :url &ldquo;<a href="http://example.com/FIXME">http://example.com/FIXME</a>&rdquo;
+  :license {:name &ldquo;Eclipse Public License&rdquo;</p>
+
+<pre><code>        :url "http://www.eclipse.org/legal/epl-v10.html"}
+</code></pre>
+
+<p>  :dependencies [[org.clojure/clojure &ldquo;1.5.1&rdquo;]</p>
+
+<pre><code>             [org.clojure/clojurescript "0.0-2277"]
+             [figwheel "0.1.3-SNAPSHOT"]])
+</code></pre>
+
+<p>  :jvm-opts [&ldquo;-Xmx1G&rdquo;]</p>
+
+<p>  :plugins [[lein-cljsbuild &ldquo;1.0.3&rdquo;]</p>
+
+<pre><code>        [lein-figwheel "0.1.3-SNAPSHOT"]
+        [com.cemerick/clojurescript.test "0.3.1"]] ;; &lt;- Adding lein plugin for tests
+</code></pre>
+
+<p>  :figwheel {</p>
+
+<pre><code>:http-server-root "public"
+:port 3449
+:css-dirs ["resources/public/css"]}
+</code></pre>
+
+<p>  :cljsbuild {</p>
+
+<pre><code>:builds [{:id "dev"
+          :source-paths ["src/perfection" "src/figwheel"]
+          :compiler {
+            :output-to "resources/public/perfection.js"
+            :output-dir "resources/public/out"
+            :optimizations :none
+            :source-map true}}
+         ;; Adding the new build 'test'. Note the :notify-command setting,
+         ;; it will run the tests when the files change
+         {:id "test"
+          :source-paths ["src/perfection" "test"]
+          :notify-command ["phantomjs" :cljs.test/runner "perfection_test.js"]
+          :compiler {
+            :output-to "perfection_test.js"
+            :optimizations :whitespace}}]})
+</code></pre>
+
+<p>```</p>
+
+<p>Now, let&rsquo;s add some function to test (<code>src/perfection/core.cljs</code>):</p>
+
+<p>```clj
+(ns perfection.core)</p>
+
+<p>(.log js/console &ldquo;Hello world 2!&rdquo;)</p>
+
+<p>;; Our new function
+(defn add [a b]
+  (+ a b))
+```</p>
+
+<p>Then, remove the currently existing <code>test/perfection/core_test.clj</code>, and create a new file <code>test/perfection/core_test.cljs</code>, which will contain our new first failing test:</p>
+
+<p>```clj
+(ns perfection.core-test
+  (:require-macros [cemerick.cljs.test :refer (is deftest)])
+  (:require [cemerick.cljs.test :as test]</p>
+
+<pre><code>        [perfection.core :as pn]))
+</code></pre>
+
+<p>(deftest ex1
+  (is (= (pn/add 1 2) 4)))
+```</p>
+
+<p>Let&rsquo;s try to run it. It should fail:</p>
+
+<p>```bash
+$ lein cljsbuild auto test
+Compiling ClojureScript.
+Compiling &ldquo;perfection_test.js&rdquo; from [&ldquo;src/perfection&rdquo; &ldquo;test&rdquo;]&hellip;
+SyntaxError: Parse error</p>
+
+<p>Testing perfection.core-test</p>
+
+<p>FAIL in (perfection.core-test/ex1) (:)
+expected: (= (pn/add 1 2) 4)
+  actual: (not (= 3 4))</p>
+
+<p>Ran 1 tests containing 1 assertions.
+Testing complete: 1 failures, 0 errors.</p>
+
+<p>Ran 1 tests containing 1 assertions.
+Testing complete: 1 failures, 0 errors.
+Successfully compiled &ldquo;perfection_test.js&rdquo; in 4.203 seconds.
+```</p>
+
+<p>Change <code>(is (= (pn/add 1 2) 4))</code> to <code>(is (= (pn/add 1 2) 3))</code>, then save the file, and the test should rerun automatically, and now it should pass:</p>
+
+<p>```bash
+Compiling &ldquo;perfection_test.js&rdquo; from [&ldquo;src/perfection&rdquo; &ldquo;test&rdquo;]&hellip;
+SyntaxError: Parse error</p>
+
+<p>Testing perfection.core-test</p>
+
+<p>Ran 1 tests containing 1 assertions.
+Testing complete: 0 failures, 0 errors.</p>
+
+<p>Ran 1 tests containing 1 assertions.
+Testing complete: 0 failures, 0 errors.
+Successfully compiled &ldquo;perfection_test.js&rdquo; in 0.719 seconds.
+```</p>
+
+<p>W00t! Now we have an autorunning test in our app.</p>
+
+<p>Some notes: PhantomJS is pretty old, it lacks a lot of features existing in modern browsers, like <code>Function.bind</code> or <code>requestAnimationFrame</code>. So, for tests you may need shims, you can write them in separate JS files, and then add to <code>:notify-command</code> in <code>project.clj</code> for the &ldquo;test&rdquo; build, e.g. like that:</p>
+
+<p>```clj
+:notify-command [&ldquo;phantomjs&rdquo;</p>
+
+<pre><code>             :cljs.test/runner
+             "resources/public/js/function-bind-shim.js"
+             "resources/public/js/request-animation-frame-shim.js"
+             "perfection_test.js"]
+</code></pre>
+
+<p>```</p>
+
+<h2>Integration with Vim</h2>
+
+<p>We already have a lot, but we are not going to stop :). We would also want to quickly search docs for the functions we use from Vim, be able to jump to definitions of the functions, and even execute some code right in the browser&rsquo;s context, right in the context of our running application, straight from Vim. Oh yes, that would be super cool. And that is totally possible, all thanks to famous Vim master Tim Pope and his beautiful &lsquo;vim-fireplace&rsquo; plugin.</p>
+
+<p>So, let&rsquo;s first configure our app so it could accept connections from repl. We need to install brepl to it. As usual, we first need to add some changes to <code>project.clj</code>:</p>
+
+<p>```clj
+(defproject perfection &ldquo;0.1.0-SNAPSHOT&rdquo;
+  :description &ldquo;FIXME: write description&rdquo;
+  :url &ldquo;<a href="http://example.com/FIXME">http://example.com/FIXME</a>&rdquo;
+  :license {:name &ldquo;Eclipse Public License&rdquo;</p>
+
+<pre><code>        :url "http://www.eclipse.org/legal/epl-v10.html"}
+</code></pre>
+
+<p>  :dependencies [[org.clojure/clojure &ldquo;1.5.1&rdquo;]</p>
+
+<pre><code>             [org.clojure/clojurescript "0.0-2277"]
+             [figwheel "0.1.3-SNAPSHOT"]])
+</code></pre>
+
+<p>  :jvm-opts [&ldquo;-Xmx1G&rdquo;]</p>
+
+<p>  :plugins [[lein-cljsbuild &ldquo;1.0.3&rdquo;]</p>
+
+<pre><code>        [lein-figwheel "0.1.3-SNAPSHOT"]
+        [com.cemerick/clojurescript.test "0.3.1"]
+        [com.cemerick/austin "0.1.4"]] ;; &lt;- Adds nice support for ClojureScript REPL.
+                                       ;;    Also has Piggieback as a dependency, which
+                                       ;;    we need for vim-fireplace
+</code></pre>
+
+<p>  :figwheel {</p>
+
+<pre><code>:http-server-root "public"
+:port 3449
+:css-dirs ["resources/public/css"]}
+</code></pre>
+
+<p>  :cljsbuild {</p>
+
+<pre><code>:builds [{:id "dev"
+          :source-paths ["src/perfection" "src/figwheel" "src/brepl"]  ;; &lt;- adding source path
+                                                                       ;;    where brepl code
+                                                                       ;;    will live
+          :compiler {
+            :output-to "resources/public/perfection.js"
+            :output-dir "resources/public/out"
+            :optimizations :none
+            :source-map true}}
+         {:id "test"
+          :source-paths ["src/perfection" "test"]
+          :notify-command ["phantomjs" :cljs.test/runner "perfection_test.js"]
+          :compiler {
+            :output-to "perfection_test.js"
+            :optimizations :whitespace}}]})
+</code></pre>
+
+<p>```</p>
+
+<p>Same thing as for figwheel &ndash; we will place the client code for brepl not in <code>src/perfection</code>, but in a separate dir, because we don&rsquo;t want other builds (like &lsquo;test&rsquo; or &lsquo;release&rsquo;) to include it.</p>
+
+<p>Now, create <code>src/brepl/perfection_brepl.cljs</code>:</p>
+
+<p>```clj
+(ns perfection-brepl
+  (:require [clojure.browser.repl :as repl]))</p>
+
+<p>(repl/connect &ldquo;<a href="http://localhost:9000/repl">http://localhost:9000/repl</a>&rdquo;)
+```</p>
+
+<p>And add its requiring to <code>resources/public/index.html</code>:</p>
+
+<p>```html
+<html>
+  <head></p>
+
+<pre><code>&lt;title&gt;Perfection - perfect dev environment for ClojureScript&lt;/title&gt;
+&lt;link href="css/style.css" rel="stylesheet" type="text/css" /&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;script src="out/goog/base.js" type="text/javascript"&gt;&lt;/script&gt;
+&lt;script src="perfection.js" type="text/javascript"&gt;&lt;/script&gt;
+&lt;script type="text/javascript"&gt;goog.require("perfection.core");&lt;/script&gt;
+&lt;script type="text/javascript"&gt;goog.require("perfection_figwheel");&lt;/script&gt;
+&lt;!-- Requiring brepl --&gt;
+&lt;script type="text/javascript"&gt;goog.require("perfection_brepl");&lt;/script&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<p>After that, restart <code>lein figwheel dev</code>, then run <code>lein repl</code>.</p>
+
+<p>Now, it&rsquo;s time to install the vim-fireplace plugin for Vim. I use <code>pathogen</code>, so I just simply put the plugin to <code>~/.vim/bundle/vim-fireplace</code>.</p>
+
+<p>Next, restart Vim, open <code>src/perfection/core.cljs</code>, and in Vim run <code>:Piggieback 9000</code>. It will hang for several seconds.</p>
+
+<p>Then reload <code>localhost:3449/index.html</code> in browser.</p>
+
+<p>You may see the exception in the browser console, like:</p>
+
+<p><code>
+Uncaught SecurityError: Failed to read the 'contentDocument' property from 'HTMLIFrameElement':
+Blocked a frame with origin "http://localhost:3449" from accessing a frame with origin
+"http://localhost:9000". Protocols, domains, and ports must match.
+</code></p>
+
+<p>but that&rsquo;s totally fine, and will work anyway.</p>
+
+<p>Go back to <code>src/perfection/core.cljs</code> in Vim, and try to run something like <code>:Eval (js/alert 123)</code>. The alert window should appear right in the browser. Cool, huh?</p>
+
+<p>You can do a lot of things with vim-fireplace, just check the docs. It converts Vim to a pretty solid ClojureScript IDE, which now is quite close even to LightTable, but with all that well-known Vim stuff you and me love so much :)</p>
+
+<h2>Release</h2>
+
+<p>Now we have everything we need for comfortable development process, but I highly recommend that you also add another build, which will generate the &ldquo;release&rdquo; version of the app, which will eventually go to production. It is very important to do that right from the beginning, because sometimes there are issues with &ldquo;advanced&rdquo; optimizations of Google Closure (which ClojureScript uses under the hood for compilation). You should really always check that your app works with :advanced optimizations, because debugging may be difficult there.</p>
+
+<p>So, add this to your <code>project.clj</code>:</p>
+
+<p>```clj
+(defproject perfection &ldquo;0.1.0-SNAPSHOT&rdquo;
+  :description &ldquo;FIXME: write description&rdquo;
+  :url &ldquo;<a href="http://example.com/FIXME">http://example.com/FIXME</a>&rdquo;
+  :license {:name &ldquo;Eclipse Public License&rdquo;</p>
+
+<pre><code>        :url "http://www.eclipse.org/legal/epl-v10.html"}
+</code></pre>
+
+<p>  :dependencies [[org.clojure/clojure &ldquo;1.5.1&rdquo;]</p>
+
+<pre><code>             [org.clojure/clojurescript "0.0-2277"]
+             [figwheel "0.1.3-SNAPSHOT"]])
+</code></pre>
+
+<p>  :jvm-opts [&ldquo;-Xmx1G&rdquo;]</p>
+
+<p>  :plugins [[lein-cljsbuild &ldquo;1.0.3&rdquo;]</p>
+
+<pre><code>        [lein-figwheel "0.1.3-SNAPSHOT"]
+        [com.cemerick/clojurescript.test "0.3.1"]
+        [com.cemerick/austin "0.1.4"]]
+</code></pre>
+
+<p>  :figwheel {</p>
+
+<pre><code>:http-server-root "public"
+:port 3449
+:css-dirs ["resources/public/css"]}
+</code></pre>
+
+<p>  :cljsbuild {</p>
+
+<pre><code>:builds [{:id "dev"
+          :source-paths ["src/perfection" "src/figwheel" "src/brepl"]
+          :compiler {
+            :output-to "resources/public/perfection.js"
+            :output-dir "resources/public/out"
+            :optimizations :none
+            :source-map true}}
+         {:id "test"
+          :source-paths ["src/perfection" "test"]
+          :notify-command ["phantomjs" :cljs.test/runner "perfection_test.js"]
+          :compiler {
+            :output-to "perfection_test.js"
+            :optimizations :whitespace}}
+         ;; Our release build. The main difference - it uses :optimizations :advanced.
+         ;; It also doesn't include src/figwheel or src/brepl - we don't need that in production
+         {:id "release"
+          :source-paths ["src/perfection"]
+          :compiler {
+            :output-to "resources/public/perfection_prod.js"
+            :output-dir "resources/public/prod-out"
+            :optimizations :advanced
+            :pretty-print false
+            :source-map "resources/public/perfection_prod.js.map"}}]})
+</code></pre>
+
+<p>```</p>
+
+<p>Now create <code>resources/public/index_prod.html</code>, it&rsquo;s going to be way shorter than our dev one:</p>
+
+<p>```html
+<html>
+  <head></p>
+
+<pre><code>&lt;title&gt;Perfection - perfect dev environment for ClojureScript&lt;/title&gt;
+&lt;link href="css/style.css" rel="stylesheet" type="text/css" /&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;script src="perfection_prod.js" type="text/javascript"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<p>And run:</p>
+
+<p><code>bash
+$ lein cljsbuild auto release
+</code></p>
+
+<p>Now you can open <code>http://localhost:3449/index_prod.html</code>, and make sure the site still works (by checking for &ldquo;Hello World 2!&rdquo; in the console.</p>
+
+<p>BTW, now if you open <code>resources/public/perfection_prod.js</code>, all you will see there is:</p>
+
+<p>```js
+;(function(){
+console.log(&ldquo;Hello world 2!&rdquo;);
+})();</p>
+
+<p>//# sourceMappingURL=perfection_prod.js.map
+```</p>
+
+<p>That&rsquo;s the power of :advanced optimizations. It got rid of everything which is not used (all the ClojureScript libs, Google Closure libs, thousands and thousands of lines of code), and left only what matters.</p>
+
+<h2>Summary</h2>
+
+<p>So, I usually have 4 things running simultaneously:</p>
+
+<p><code>
+lein repl
+lein figwheel dev
+lein cljsbuild auto test
+lein cljsbuild auto release
+</code></p>
+
+<p>And whenever I make a change in the source code, I&rsquo;ll get updated version of the app in the browser, without page refresh, the tests will run, and the release will be built. All automagically.</p>
+
+<p>That&rsquo;s what I call &ldquo;the perfect dev environment&rdquo;.</p>
+
+<h2>Tips &amp; Tricks</h2>
+
+<h3>Paredit</h3>
+
+<p>You should use it. Since Clojure is Lisp, and consists of s-expressions, it has a very clear structure. Paredit allows to efficiently edit your code by manipulating s-expressions. This is when all these parentheses, which initially scare Lisp newcomers, will bring power. There is a plugin for Vim, a bit buggy, especially when you copy/paste large structures (especially when they are unbalanced), but it&rsquo;s still worth it.</p>
+
+<h3><code>p</code> and <code>b</code></h3>
+
+<p>I found it very useful for my development process to create the function <code>p</code> and the macro <code>b</code> for debugging.</p>
+
+<ul>
+<li><code>p</code> just prints what the value it receives and returns it.</li>
+<li><code>b</code> prints what time did the execution of the nested s-expression take, and also returns the value.</li>
+</ul>
+
+
+<p>They look like this:</p>
+
+<p><code>clj
+(defn p "Prints given arguments, and then returns the last one"
+  [&amp; values]
+  (.log js/console (apply pr-str values))
+  (last values))
+</code></p>
+
+<p>```clj
+(defn benchmark
+  &ldquo;Prints the execution time for the given function. Accepts optional string, which will
+   be used as a description&rdquo;
+  ([f] (benchmark nil f))
+  ([msg f]
+  (let [start (.now js/Date)</p>
+
+<pre><code>    result (f)]
+(p (str (when msg (str msg ": ")) (- (.now js/Date) start) "ms"))
+result)))
+</code></pre>
+
+<p>(defmacro b
+  ([f]
+  `(tixi.utils/benchmark (fn [] ~f)))</p>
+
+<p>  ([msg f]
+  `(tixi.utils/benchmark ~msg (fn [] ~f))))
+```</p>
+
+<p>And then we can use them, like that. Imagine you have a function:</p>
+
+<p>```clj
+(let [foo 2</p>
+
+<pre><code>  bar (+ 3 foo)]
+</code></pre>
+
+<p>  (+ foo bar))
+```</p>
+
+<p>And you are curious about what&rsquo;s the output of <code>(+ 3 foo)</code>. So you can do:</p>
+
+<p>```clj
+(let [foo 2</p>
+
+<pre><code>  bar (p (+ 3 foo))]
+</code></pre>
+
+<p>  (+ foo bar))
+```</p>
+
+<p>And it will put &lsquo;5&rsquo; in the browser console. Curious how long it takes to execute it?</p>
+
+<p>```clj
+(let [foo 2</p>
+
+<pre><code>  bar (b (+ 3 foo))]
+</code></pre>
+
+<p>  (+ foo bar))
+```</p>
+
+<p>&lsquo;0ms&rsquo; (obviously :)) will appear in the browser console.</p>
+
+<p>It starts to really shine especially with Paredit, when you can wrap and unwrap parentheses by one keystroke.</p>
+
+<h3>Video</h3>
+
+<p>This is a little screencast I recorded how I develop <a href="http://textik.com">Textik</a>, using the dev environment like that:</p>
+
+<iframe width="835" height="626" src="//www.youtube.com/embed/IWexDxLnnak" frameborder="0" allowfullscreen></iframe>
+
+
+<h2>Conclusion</h2>
+
+<p>I really think ClojureScript so far is the most interesting and productive way to build complex front-end projects on the web. Especially if you use it with React (and some React wrapper, like <a href="https://github.com/swannodette/om">Om</a>, <a href="https://github.com/holmsand/reagent">Reagent</a> or <a href="https://github.com/levand/quiescent">Quiescent</a>). If you didn&rsquo;t try it yet, you should definitely try, and then hopefully you&rsquo;ll find this article useful :)</p>
+]]></content>
+  </entry>
+  
+</feed>

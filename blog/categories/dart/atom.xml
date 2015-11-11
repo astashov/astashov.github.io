@@ -1,0 +1,512 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Dart | Anton Astashov's blog]]></title>
+  <link href="http://astashov.github.io/blog/categories/dart/atom.xml" rel="self"/>
+  <link href="http://astashov.github.io/"/>
+  <updated>2015-11-11T11:44:27-06:00</updated>
+  <id>http://astashov.github.io/</id>
+  <author>
+    <name><![CDATA[Anton Astashov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Dart Tricks in dartdocs.org]]></title>
+    <link href="http://astashov.github.io/blog/2015/11/08/dart-tricks-in-dartdocs-org/"/>
+    <updated>2015-11-08T21:01:01-06:00</updated>
+    <id>http://astashov.github.io/blog/2015/11/08/dart-tricks-in-dartdocs-org</id>
+    <content type="html"><![CDATA[<p>I&rsquo;ve just finished building new infrastructure for <a href="https://www.dartdocs.org">Dartdocs</a>, and <a href="https://plus.google.com/+SethLadd">Seth</a> asked me to share my experience with Dart there. Obviously, you expect infrastructure for generating Dart docs for all the packages on <a href="https://pub.dartlang.org/">pub</a> to be written in Dart, though it might be built in any programming language. All it needs in a nutshell is to run a dartdoc shell command, which actually generates the documentation, and then upload the generated files somewhere.</p>
+
+<p>This is not my first Dart project, we use Dart in <a href="http://www.mixbook.com">Mixbook</a> (where I work) pretty heavily, mostly for <a href="https://www.montagebook.com">various</a> <a href="http://www.mixbook.com/canvas-prints">client-side</a> <a href="http://www.mixbook.com/photo-prints">projects</a>, but we also have some microservices on backend written in Dart as well. I love Dart, but like with any technology, using it is a tradeoff. It has its own pros (great async support, amazing tooling and ecosystem, staticly typed, but interpreted &ndash; no compile time) and cons (type system is not strict enough, IMHO, also a bit conservative for a modern language, i.e. where are my non-nullable types, method generics and immutable value objects?! :)), but for me pros outweight cons, so I use it a lot, and actually pretty happy with it.</p>
+
+<p>The requirements for <a href="http://www.dartdocs.org">http://www.dartdocs.org</a> were pretty simple &ndash; the infrastructure for generating docs for the Dart pub ecosystem, which is:</p>
+
+<ul>
+<li>Efficient &ndash; should use the available computing resources efficiently, avoid unnecessary work</li>
+<li>Scalable &ndash; allows to regenerate the documentation for the whole Dart ecosystem quickly (which is thousands and thousands Dart packages), within several hours, in case there is a new version of <a href="https://github.com/dart-lang/dartdoc">dartdoc</a> tool.</li>
+<li>Reliable &ndash; should work unattended, restore itself in case of failures, and should be easy to debug in case of failures.</li>
+</ul>
+
+
+<p>These requirements describe pretty much any web service you usually write :) So, I&rsquo;ll describe several tricks below I used in dartdocs to achieve these.</p>
+
+<h2>Efficiency</h2>
+
+<p>As I already said, Dart has really nice async support, for me this is one of its killer features. Futures and Streams were added to SDK from the very early versions, which means all the packages just use the SDK&rsquo;s ones, and nobody tries to reinvent their own implementations of Futures or Streams. And this is a big deal! A lot of packages are built with concurrency support as well, methods return Futures and Streams, and that makes these packages composable with each other, since every package uses the same implementation of Futures and Streams. Web frameworks, database drivers, unit test packages, file system tools, loggers, http libraries, socket handling, etc &ndash; all of them usually support concurrency and non-blocking operations. This allows us to build event-based fully concurrent web services pretty easily (especially after adding async/await support in Dart 1.9!)</p>
+
+<p>So, a workflow for the main dartdocs.org script is:</p>
+
+<ul>
+<li>Download all the existing package names and versions from pub (or refresh the list if already downloaded)</li>
+<li>Download (or refresh) the metadata for already generated packages from Google Cloud Datastore (was it successfully generated or not, generation datetime, etc)</li>
+<li>Figure out the next batch of packages to generate</li>
+<li>Actually generate the docs</li>
+<li>Upload the docs to Google Cloud Storage</li>
+<li>Update the metadata for the newly generated packages on Google Cloud Datastore</li>
+</ul>
+
+
+<p>Mostly, all of these are network calls (except actual generation of docs), so it&rsquo;d be dumb to do that sequently. But thanks to all the things about async and concurrency I desribed above, it could be done pretty easily! The HTTP lib and libs for working with Google Cloud services &ndash; they all return Futures, of course, so we can group them and then handle these groups in parallel. E.g., you could implement uploading to Google Cloud Storage in the following way:</p>
+
+<p>```dart
+// Getting the list of all the generated docs files for [package]. This is actually non-blocking too!
+var files = await _getListOfFilesForPackage(package);</p>
+
+<p>// Grouping files into groups of 20
+var groups = inGroupsOf(files, 20);</p>
+
+<p>for (Iterable group in groups) {
+  // Upload every 20 files in parallel, waiting til that batch finishes uploading, then starting a new one
+  await Future.wait(group.map((file) {</p>
+
+<pre><code>var future = _uploadFileToGCS(file);
+return future;
+</code></pre>
+
+<p>  }));
+}
+```</p>
+
+<p>Pretty simple, and easy to read and reason about. There is some room for improvement (you could queue all the uploads, and just make sure you handle 20 at a time, using some <a href="https://pub.dartlang.org/packages/tasks">task queue</a>, for example), but this example is simple enough to demonstrate the use case.</p>
+
+<p>This non-blocking nature may be not so important for dartdocs.org, but it&rsquo;s becoming way more important when you use it in web services with HTTP front-end. Usually, you don&rsquo;t spend a lot of time and CPU on crunching numbers in a request, but instead you just make a lot of network calls to various services and databases, combine data together and return to the requester. Something like this:</p>
+
+<p>```dart
+@app.Route(&ldquo;/sendNotificationsToUsers&rdquo;, methods: const [app.POST])
+sendNotificationsToUsers(@app.Body(app.JSON) List<int> userIds) async {
+  Iterable<User> users = await getUsersFromDatabase(userIds);
+  Iterable<bool> results = await Future.wait(users.map((user) async {</p>
+
+<pre><code>Future&lt;bool&gt; result = sendEMailToUser(user);
+return result;
+</code></pre>
+
+<p>  }));
+  if (results.every(&reg; => r)) {</p>
+
+<pre><code>return JSON.encode({"status": "successful"});
+</code></pre>
+
+<p>  } else {</p>
+
+<pre><code>return JSON.encode({"status": "failure"});
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>If every piece is non-blocking, the app spends very really little computation time on each request and has availability to process other concurrent requests. So you can process a lot of requests concurrently in a single thread. Which is great!</p>
+
+<h2>Scalability</h2>
+
+<p>Scalability in this context means &ndash; if we want to finish regenerating docs faster, we just need to launch more instances in the cloud. So, we need a way to split the work between them, and rebalance the work when we add or remove the instances.</p>
+
+<p>Let&rsquo;s observe some properties of the pub Dart packages &ndash; each package is uniquely identified by its name and version. It&rsquo;s immutable &ndash; the source code of the package never changes. Also, the packages are never being deleted, all their versions will forever stay in pub. So, developers can only add new packages, so the list is always growing, but never shrinking.</p>
+
+<p>I hosted the infrastructure on Google Cloud, on Google Compute Engine (GCE) instances. GCE has the ability to create instance groups, where you can specify how many instances should be run within that group. Each instance within that group will have a unique name, and you can get a list of all the instance names within a group. So, splitting the work in this case is pretty simple &ndash; after finishing generating docs for another batch of packages, we ask for the list of currently existing GCE instances within the group, sort it, check what&rsquo;s the current instance index within the list, and depending on that retrieve the next batch of packages from the whole list. I.e. if we have 5 instances in the group &ndash; foo1, foo2, foo3, foo4, and foo5. The current instance name is foo2. Whole number of unhandled packages is 10000. The batch size is 20 packages. Given all that, we&rsquo;ll take the range 2001-2020 from the list of all unhandled packages as the next batch.</p>
+
+<p>Sometimes, when we increase or reduce number of instances in the group, we may end up with 2 instances generating docs for the same package, but that&rsquo;s fine &ndash; they will produce the same result and rare enough we can ignore that.</p>
+
+<h2>Reliability</h2>
+
+<p>The scripts should work unattended, and should try to restore themselves after failures. Also, there are a lot of network calls happening during the workflow of the script, so it should be tolerable to network failures, or external service failures. Also, in case of a failure, we need to know why the failure happened. We can achieve that by logging, timeouts, retries, and if we are out of retries, then just fail completely, and let something like <a href="https://mmonit.com/monit/">monit</a> to get us up and running again.</p>
+
+<h3>Retries</h3>
+
+<p>It&rsquo;s actually very simple to do &ndash; let&rsquo;s define this function:</p>
+
+<p>```dart
+const <em>defaultDurations = const [const Duration(seconds: 3), const Duration(seconds: 5), const Duration(seconds: 15)];
+Future retry(body(), {int number: 3, Iterable<Duration> durations: </em>defaultDurations) async {
+  try {</p>
+
+<pre><code>return await body();
+</code></pre>
+
+<p>  } catch (error, _) {</p>
+
+<pre><code>if (number &gt; 0) {
+  var duration = durations.first;
+  var newDurations = new List.from(durations);
+  if (newDurations.length &gt; 1) {
+    newDurations.removeAt(0);
+  }
+  return new Future.delayed(duration, () =&gt; retry(body, number: number - 1, durations: newDurations));
+} else {
+  rethrow;
+}
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>Now, with any sync or async <code>body()</code>, in case it throws some exception, it will retry several times with specified durations, and then fail. We wrap every single network call into that retry, something like this:</p>
+
+<p><code>dart
+import 'package:http/http.dart' as http;
+// ...
+var response = retry(() =&gt; http.get(url).then((r) =&gt; JSON.decode(r.body)));
+</code></p>
+
+<p>Unfortunately, we lose the return type of <code>body()</code> in this case, this is would be a great use case for <a href="https://github.com/leafpetersen/dep-generic-methods/blob/master/proposal.md">method generics</a> (there is a <a href="https://github.com/dart-lang/sdk/issues/254">ticket</a> though).</p>
+
+<p>Every network call in dartdocs.org scripts is wrapped with <code>retry()</code>, and it greatly reduces the number of failures, which may happen just because the network had problems or some service had occasional internal server error.</p>
+
+<h3>Timeouts</h3>
+
+<p>It&rsquo;s a good practice to specify meaningful timeouts for the things that are not under your control (like network calls, or external shell commands runs). There is the<code>Future.timeout()</code> method, which completes a future after specified duration, you use it somewhat like this:</p>
+
+<p><code>dart
+var response = await http.get(url).timeout(const Duration(seconds: 10));
+var json = JSON.decode(response.body);
+</code></p>
+
+<p>I used this approach everywhere at first, but then figured out that for the shell scripts it doesn&rsquo;t really work &ndash; if the shell script hangs, timeout fires, and the Dart script continues to run, but that script is not killed, it still hangs. So, a better approach would be to use <code>timeout</code> program, which kills the script and exits with non-zero status after specified timeout.</p>
+
+<h3>Logging</h3>
+
+<p>Sometimes things go wrong, and we need to know why. To figure out why we get some exception, it&rsquo;s usually not enough to have just that exception and the stack trace, you usually need to know what happened before that, that&rsquo;s why we need logging.</p>
+
+<p>The most popular logging package in Dart is named (surprisingly!) <a href="https://pub.dartlang.org/packages/logging">logging</a>. The nice thing about it, that it gives a stream with  all the log records as part of its API, so you can subscribe to that stream and do whatever you want with it &ndash; write it to STDOUT, to a file, etc.</p>
+
+<p>E.g., if we just want to print every log record into STDOUT, it may look something like this:</p>
+
+<p>```dart
+String format(LogRecord record) => &ldquo;${record.level} &ndash; ${record.message}&rdquo;;</p>
+
+<p>Logger.root.onRecord.map(format).listen(print);
+```</p>
+
+<h3>Debugging</h3>
+
+<p>Since the code is async from the top to the bottom, in case of failure, what&rsquo;d you expect to see in the stacktrace? E.g. for this code:</p>
+
+<p>```dart
+import &lsquo;dart:async&rsquo;;</p>
+
+<p>Future<Null> blah() async {
+  throw &lsquo;foo&rsquo;;
+}</p>
+
+<p>void main() async {
+  var result = await new Future(() async {</p>
+
+<pre><code>await new Future(() async {
+  await blah();
+});
+</code></pre>
+
+<p>  });
+}
+```</p>
+
+<p>Probably something like this:</p>
+
+<p>```
+Unhandled exception:
+Uncaught Error: foo
+Stack Trace:</p>
+
+<h1>0      blah.&lt;blah_async_body> (file:///Users/anton/projects/dartdocsorg/blah.dart:7:3)</h1>
+
+<h1>1      Future.Future.microtask.<anonymous closure> (dart:async/future.dart:144)</h1>
+
+<h1>2      _microtaskLoop (dart:async/schedule_microtask.dart:43)</h1>
+
+<h1>3      _microtaskLoopEntry (dart:async/schedule_microtask.dart:52)</h1>
+
+<h1>4      <em>Timer.</em>runTimers (dart:isolate-patch/timer_impl.dart:394)</h1>
+
+<h1>5      <em>Timer.</em>handleMessage (dart:isolate-patch/timer_impl.dart:414)</h1>
+
+<h1>6      <em>RawReceivePortImpl.</em>handleMessage (dart:isolate-patch/isolate_patch.dart:148)</h1>
+
+<p>```</p>
+
+<p>The first line shows where the exception happened, but we have no idea where we came from when we reached that line, making the stacktrace useless. This is what stack traces usually look like in heavily async programs, and that&rsquo;s one of the reasons why it&rsquo;s hard to debug them.</p>
+
+<p>Thankfully, <a href="https://pub.dartlang.org/packages/stack_trace">stack_trace</a> package gives you the tools to solve that problem. If you wrap everything into <code>Chain.capture</code>, like this:</p>
+
+<p>```dart
+import &lsquo;package:stack_trace/stack_trace.dart&rsquo;;
+import &lsquo;dart:async&rsquo;;</p>
+
+<p>Future<Null> blah() async {
+  throw &lsquo;foo&rsquo;;
+}</p>
+
+<p>void main() {
+  Chain.capture(() async {</p>
+
+<pre><code>var result = await new Future(() async {
+  await new Future(() async {
+    await blah();
+  });
+});
+</code></pre>
+
+<p>  }, onError: (error, chain) {</p>
+
+<pre><code>print(chain.terse);
+</code></pre>
+
+<p>  });
+}
+```</p>
+
+<p>you&rsquo;ll get way nicer stack traces:</p>
+
+<p><code>
+blah.dart 7:3        blah.&lt;async&gt;
+===== asynchronous gap ===========================
+dart:async           _Completer.completeError
+blah.dart 10:1       blah.&lt;async&gt;
+===== asynchronous gap ===========================
+dart:async           Future.Future.microtask
+blah.dart            blah
+blah.dart 14:15      main.&lt;fn&gt;.&lt;async&gt;.&lt;fn&gt;.&lt;async&gt;.&lt;fn&gt;.&lt;async&gt;
+===== asynchronous gap ===========================
+dart:async           Future.Future
+blah.dart 13:17      main.&lt;fn&gt;.&lt;async&gt;.&lt;fn&gt;.&lt;async&gt;
+===== asynchronous gap ===========================
+dart:async           Future.Future
+blah.dart 12:28      main.&lt;fn&gt;.&lt;async&gt;
+===== asynchronous gap ===========================
+dart:async           Future.Future.microtask
+blah.dart            main.&lt;fn&gt;
+package:stack_trace  Chain.capture
+blah.dart 11:9       main
+</code></p>
+
+<p>It adds some performance and memory penalty, but it&rsquo;s neglectable for the dartdocs.org scripts, and simplifies debugging a lot.</p>
+
+<h2>Summary</h2>
+
+<p>All in all, it was a pretty straightforward project, and Dart didn&rsquo;t give me any unpleasant surprises, everything works just fine and as expected, and <a href="https://www.dartdocs.org/history/index.html">generates documentation for the new packages</a> every day. Check it out, if you haven&rsquo;t yet!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Dart Apps With Unidirectional Flow and Persistent Data Structures]]></title>
+    <link href="http://astashov.github.io/blog/2014/10/18/dart-apps-with-unidirectional-flow-and-persistent-data-structures/"/>
+    <updated>2014-10-18T01:05:46-05:00</updated>
+    <id>http://astashov.github.io/blog/2014/10/18/dart-apps-with-unidirectional-flow-and-persistent-data-structures</id>
+    <content type="html"><![CDATA[<p>Recently in JavaScript, and especially in ClojureScript world, one approach of developing front-end apps became pretty popular &ndash; using unidirectional app flow and persistent data structures. Something pretty close to <a href="http://facebook.github.io/flux/docs/overview.html">Flux</a>, but not really exactly like it. I tried that approach in <a href="http://textik.com">Textik</a>, and was really happy how it went.</p>
+
+<h2>The idea</h2>
+
+<p>Here&rsquo;s the idea &ndash; in your app, you have only one place where you store <strong>ALL</strong> of your application state, some sort of global structure, containing persistent vectors and maps. It is important to use persistent data structures there, as you will see soon, they provide some very important features we use to speed up our app.</p>
+
+<p>So, you have one global data structure, where the state of all your application is stored. Everything is there &ndash; what tooltips are shown, what buttons are disabled, all the content of the app, etc. Then, you pass that global data structure to your rendering engine, which renders the whole app, from top to bottom, for the first time. It also sets up various HTML events listeners to the DOM elements, and attaches event handlers, which basically do only one thing &ndash; they generate parameters payload, and pass it to Dispatcher.</p>
+
+<p>Dispatcher receives that payload, and figures out what to do with it. It calls various &ldquo;mutators&rdquo; &ndash; models, which actually will change the global state of the app. Then, Dispatcher calls the rendering engine again, and passes the updated global state to it. The rendering engine rerenders the whole app again, from top to the bottom. But now, it can easily figure out what parts, or what components of the app should be rerendered. We pass particular subtrees of our global state tree to the components while rendering the whole app, and because these are persistent data structures, we can very quickly find out if some particular subtree was changed since last render. So, the rendering engine, using that knowledge, rerenders only parts of the app, which were changed, and because of that &ndash; it does that really fast.</p>
+
+<p>And then everything happens in the same way again. We get another event, send the payload to Dispatcher, Dispatcher calls mutators, mutators change the global state, and Dispatcher calls the rendering engine to rerender the app again.</p>
+
+<p>I.e., this way:</p>
+
+<p>```</p>
+
+<pre><code>  main -------&gt; render view --------&gt; dispatcher
+                    ^                      |
+                    |                      |
+                    |                      v
+                    +------------ change global state
+</code></pre>
+
+<p>```</p>
+
+<p>So, this way we get a very simple data flow, all our events go through the same message bus to Dispatcher, the app structure becomes so simple, it is even ridiculous a bit :)</p>
+
+<h2>Implementing TodoMVC in Dart</h2>
+
+<p>So, I decided to try the same approach with Dart. I took ReactJS as the rendering engine, since it works really close to what I want from it, and there is a nice Dart wrapper for it from Clean Team &ndash; <a href="https://pub.dartlang.org/packages/react">react</a>. As for persistent data structures, there is a pub package from VacuumLabs &ndash; <a href="https://github.com/vacuumlabs/persistent">persistent</a> (but unfortunately it is not in Pub, you should get it from their forked repo from GitHub).</p>
+
+<p>You can check the source code here: <a href="https://github.com/astashov/todomvc/tree/master/labs/architecture-examples/react-dart-uniflow/web/dart,">https://github.com/astashov/todomvc/tree/master/labs/architecture-examples/react-dart-uniflow/web/dart,</a> and you can play with it here: <a href="http://astashov.s3-us-west-2.amazonaws.com/todomvc/index.html">http://astashov.s3-us-west-2.amazonaws.com/todomvc/index.html</a> (if you want to check it in Dart, use Dartium). This is just usual TodoMVC app.</p>
+
+<p>Let me quickly guide you through the code.</p>
+
+<p>Everything starts with <a href="https://github.com/astashov/todomvc/blob/master/labs/architecture-examples/react-dart-uniflow/web/dart/data.dart#L86">initializing the global state</a>.</p>
+
+<p>```dart
+// data.dart</p>
+
+<p>var _appData = new Data(persist({</p>
+
+<pre><code>'autoincrement': 0,
+'new-input': '',
+'list': [],
+'filter': 'all',
+'edit': null}));
+</code></pre>
+
+<p>Data get appData => _appData;
+```</p>
+
+<p><code>appData</code> will be globally available, and we&rsquo;ll get the current value of the global state with <code>appData.value</code>.
+There are a bunch of methods-mutators in the <code>Data</code> class, which will overwrite the <code>value</code> property of <code>appData</code> with the new value. They won&rsquo;t really mutate the existing <code>value</code>, but recreate the new one, reusing unchanged parts of the old <code>value</code>.</p>
+
+<p>Then, we <a href="https://github.com/astashov/todomvc/blob/master/labs/architecture-examples/react-dart-uniflow/web/dart/app.dart#L46">initialize the app</a>, entering our <code>main()</code> function:</p>
+
+<p>```dart
+// app.dart</p>
+
+<p>void main() {
+  setClientConfiguration();
+  rerender();
+}
+```</p>
+
+<p><code>setClientConfiguration()</code> initializes the <code>react</code> library, and then we render the app for the first time. It happens in <a href="https://github.com/astashov/todomvc/blob/master/labs/architecture-examples/react-dart-uniflow/web/dart/dispatcher.dart#L12">dispatcher.dart</a>:</p>
+
+<p>```dart
+// dispatcher.dart</p>
+
+<p>void rerender() {
+  renderComponent(todoAppComponent({&lsquo;value&rsquo;: appData.value}), querySelector(&lsquo;#todoapp&rsquo;));
+}
+```</p>
+
+<p>Here we call <code>renderComponent</code>, which is a function of the <code>react</code> package, and pass the React component we are going to render and the selector which we are going to append it to.</p>
+
+<p>The components are defined in the <a href="https://github.com/astashov/todomvc/blob/master/labs/architecture-examples/react-dart-uniflow/web/dart/components.dart#L41">components.dart</a> file.</p>
+
+<p>All our components are not just default <code>React</code> components, but instead inherited from our custom <code>_Component</code> class, which we instrumented with the <code>shouldComponentUpdate</code> hook. There we check if the new passed value (our subtree of the global state) was changed since the last render. Again, this check should be very fast because of the persistent data structures properties. Also, as a convention, we are going to send our subtrees as the &lsquo;value&rsquo; prop.</p>
+
+<p>Let&rsquo;s have a look at <code>todoAppComponent</code> &ndash; our entry component. All it does is just renders three subcomponents &ndash; header, footer and main, and pass parts of the received global tree to them.</p>
+
+<p>```dart
+// components.dart</p>
+
+<p>class TodoApp extends _Component {
+  render() {</p>
+
+<pre><code>return
+  div({'id': 'todo-app', 'className': value['filter']}, [
+    headerComponent({'value': value["new-input"]}),
+    mainComponent({'value': persist({
+      'list': value["list"],
+      'edit': value["edit"]})}),
+    footerComponent({'value': persist({
+      'count': value["list"].length,
+      'filter': value["filter"],
+      'countCompleted': value["list"].where((i) =&gt; i["isCompleted"]).length})})]);
+</code></pre>
+
+<p>  }
+}
+var todoAppComponent = registerComponent(() => new TodoApp());
+```</p>
+
+<p>Now, let&rsquo;s have a look e.g. at <code>headerComponent</code>, which renders the input for creating new tasks, and also adds event handlers to the input. It only receives the <code>appData.value['new-input']</code> value, which defines what should be the value of the input.</p>
+
+<p>```dart
+// components.dart</p>
+
+<p>class Header extends _Component {</p>
+
+<p>  // &hellip;</p>
+
+<p>  void _inputChange(event) {</p>
+
+<pre><code>dispatch({'action': 'new-input', 'value': event.target.value});
+setState({'value': event.target.value});
+</code></pre>
+
+<p>  }</p>
+
+<p>  // &hellip;</p>
+
+<p>  render() {</p>
+
+<pre><code>return
+  header({'id': 'header'}, [
+    h1({}, 'todos'),
+    input({
+      'id': 'new-todo', 'placeholder': 'What needs to be done?', 'autofocus': 'autofocus',
+      'value': value, 'onChange': _inputChange, 'onKeyDown': _onKeyDown})]);
+</code></pre>
+
+<p>  }
+}
+var headerComponent = registerComponent(() => new Header());
+```</p>
+
+<p>Every single time we enter/remove a character in the input, we fire an event, and its handler <a href="https://github.com/astashov/todomvc/blob/master/labs/architecture-examples/react-dart-uniflow/web/dart/dispatcher.dart#L19">calls the dispatch function</a> of Dispatcher. We send the payload to it, which looks like <code>{'action': 'new-input', 'value': input.value}</code>.</p>
+
+<p>There, in Dispatcher, we handle it. For simplicity, I mutate the global state right in Dispatcher, but in a larger application you probably would want to delegate that to a model.</p>
+
+<p>And then, we rerender the app again.</p>
+
+<p>```dart
+// dispatcher.dart</p>
+
+<p>void dispatch(Map payload) {
+  switch (payload[&ldquo;action&rdquo;]) {</p>
+
+<pre><code>// ...
+case 'new-input':
+  appData.update("new-input", payload['value']);
+  break;
+// ...
+</code></pre>
+
+<p>  }
+  rerender();
+}
+```</p>
+
+<h2>Summary</h2>
+
+<p>So, that&rsquo;s actually it. Of course there are also other functionality &ndash; editing items, removing items, marking as completed, etc, but it works just in the same way as I just described. For items, there is the <code>Item</code> model &ndash; <a href="https://github.com/astashov/todomvc/blob/master/labs/architecture-examples/react-dart-uniflow/web/dart/models/item.dart">items.dart</a>, which provides API for CRUD operations for items. But all that stuff works in the same way I just described.</p>
+
+<p>That&rsquo;s the whole lifecycle of the application. Very simple, very declarative &ndash; you basically only need to work with the global state, changing it accordingly, and you don&rsquo;t really need to care about the view &ndash; React will do a great job with rendering the app using the global state.</p>
+
+<p>Another cool side-effect of having the global state &ndash; you can always easily reproduce your user&rsquo;s problems &ndash; debugging becomes way easier! If you use something like Airbrake or Rollbar to aggregate exceptions from your users, then you could just attach the global state in JSON to the exception you are about to send to e.g. Rollbar, and then you can easily reproduce the user&rsquo;s problem just by applying that JSON on your machine, so you&rsquo;d get exactly the same state of the app where the user was before the exception happened. Kinda cool, huh? :)</p>
+
+<p>There are a bunch of other cool things (e.g. simple undo &ndash; you can just save the full state of the app (or part of the state) in a vector every time the change happens, and it will be stored efficiently because of the nature of persistent data structures).</p>
+
+<p>I&rsquo;m really excited about this approach so far.</p>
+
+<h2>Isn&rsquo;t that like Rails?</h2>
+
+<p>If you ever worked with Rails, you can actually see a lot of similar things in this approach. In Rails, we pass our request through router, then router figures out (from URLs and GET params) what controller this request should be sent to, controller calls various models, which change the database, and the render the response. In this case,</p>
+
+<ul>
+<li>Dispatcher is router</li>
+<li>&lsquo;mutators&rsquo; are models</li>
+<li>appData is our database</li>
+</ul>
+
+
+<p>In models, we also don&rsquo;t have our internal state, models work with the database, retrieving and saving data into it.
+Same as in ActiveRecord :)</p>
+
+<p>And the whole lifecycle of the front-end app like this one and a Rails app looks extremely familiar. :)</p>
+
+<hr />
+
+
+<p>There are still some things, that could be improved, and some additional persistent data structures, that could be written, like e.g. currently PersistentVector doesn&rsquo;t efficiently handle inserting/removing elements in the middle of a vector. But still, you already can do a lot with the Dart ecosystem and these 2 packages I was talking about &ndash; <code>react</code> and <code>persistent</code>.</p>
+
+<p>So, please try it out, hopefully you&rsquo;ll find it useful :)</p>
+
+<h2>Related links</h2>
+
+<ul>
+<li><a href="https://pub.dartlang.org/packages/react">React</a></li>
+<li><a href="https://github.com/vacuumlabs/persistent">Persistent</a> &ndash; btw, there is a great explanation why persistent data structures are cool, make sure you&rsquo;ve read that!</li>
+<li><a href="https://github.com/astashov/todomvc/tree/master/labs/architecture-examples/react-dart-uniflow/web/dart">Source code</a></li>
+<li><a href="http://astashov.s3-us-west-2.amazonaws.com/todomvc/index.html">Demo</a> (Dartium only)</li>
+<li><a href="http://www.slideshare.net/AntonAstashov/textik">Slides of my Textik talk</a> &ndash; where I was talking about the Textik&rsquo;s architecture, which is very close to what I described dhere.</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>
