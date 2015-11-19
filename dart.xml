@@ -4,7 +4,7 @@
   <title><![CDATA[Anton Astashov's blog - Dart]]></title>
   <link href="http://astashov.github.io/dart.xml" rel="self"/>
   <link href="http://astashov.github.io/"/>
-  <updated>2015-11-19T09:02:58-06:00</updated>
+  <updated>2015-11-19T09:04:23-06:00</updated>
   <id>http://astashov.github.io/</id>
   <author>
     <name><![CDATA[Anton Astashov]]></name>
@@ -106,7 +106,7 @@
 
 <p>It&rsquo;s nice that there&rsquo;s no compile-time, with there is static analysis support. Despite the fact the type system is &ldquo;optional and unsound&rdquo;, not using type annotations for public methods and functions is considered a bad practice.</p>
 
-<p>The fact the language has source based VM actually simplifies debugging a lot. Despite a decent debugger and other tools, the most convenient way of debugging programs for me is still just throwing print statements. Since the language is interpreted, you can easily throw them into the source code of any package or into SDK itself, and immediately see them on page refresh or script restart.</p>
+<p>The fact the language has source based VM actually simplifies debugging a lot. Despite a decent debugger and other tools, the most convenient way of debugging programs for me is still just throwing print statements. Here, you can easily throw them into the source code of any package or into SDK itself, and immediately see them on page refresh or script restart.</p>
 
 <p>Static analyzer is written as a <a href="https://pub.dartlang.org/packages/analyzer">package</a>, and also there is a daemon (basically headless IDE), which uses it and provides API, which could by used by the IDEs to provide Dart support. The analyzer supports autocomplete, go to definition, find usages, refactoring, etc. This is really cool, because it simplifies writing tools, which require analyzing of the source code. Like:</p>
 
